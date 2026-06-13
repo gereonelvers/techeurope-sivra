@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import functools
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -36,6 +37,10 @@ def label(org_id: str, person: TargetPerson) -> str:
 
 
 def phone(org_id: str, person: TargetPerson) -> Optional[str]:
+    # env override keeps personal numbers out of git: QM_PHONE_<ROLE> or QM_DEMO_PHONE
+    env = os.getenv(f"QM_PHONE_{person.value.upper()}") or os.getenv("QM_DEMO_PHONE")
+    if env:
+        return env
     p = people(org_id).get(person.value)
     return (p or {}).get("phone")
 

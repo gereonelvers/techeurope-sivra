@@ -28,7 +28,9 @@ class TelnyxSMSDelivery:
 
     def __init__(self) -> None:
         self.key = os.environ["TELNYX_API_KEY"]
-        self.frm = os.environ["TELNYX_FROM"]
+        # International A2P (e.g. US long code -> DE) needs an alphanumeric sender;
+        # prefer it when set, else send from the raw number.
+        self.frm = os.getenv("TELNYX_ALPHA_SENDER") or os.environ["TELNYX_FROM"]
         self.profile = os.getenv("TELNYX_MESSAGING_PROFILE_ID")
 
     def send(self, request: DecisionRequest, decision: RoutingDecision) -> None:
