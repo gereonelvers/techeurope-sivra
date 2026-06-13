@@ -96,21 +96,21 @@ def _message(req: DecisionRequest, person: TargetPerson, g: Guardrail) -> str:
         if req.proposed_value and req.budget_cap:
             over = req.proposed_value - req.budget_cap
             return (
-                f"💸 {title}: seller wants €{req.proposed_value:.0f} "
-                f"(€{over:.0f} over your €{req.budget_cap:.0f} cap). Approve, counter, or decline?"
+                f"{title}: the seller wants €{req.proposed_value:.0f} — "
+                f"€{over:.0f} over your €{req.budget_cap:.0f} cap. Approve, counter, or decline?"
             )
-        return f"💸 {title}: price is above budget. Approve, counter, or decline?"
+        return f"{title}: the price is above budget. Approve, counter, or decline?"
     if dt == DecisionType.approve_purchase:
         price = _amount(req)
-        return f"🛒 Ready to buy {title} for €{price:.0f}. Confirm purchase?"
+        return f"Ready to buy {title} for €{price:.0f}. Confirm the purchase?"
     if dt == DecisionType.pickup_logistics:
         when = g.pickup_time or "a proposed time"
         where = g.pickup_location or "the agreed place"
-        return f"📍 Pickup for {title}: {when} at {where}. Confirm or adjust?"
+        return f"Pickup for {title}: {when} at {where}. Confirm or adjust?"
     if dt == DecisionType.ambiguous_listing:
-        return f"❓ Several listings match {title} — I need you to pick the right one."
+        return f"Several listings match {title} — I need you to pick the right one."
     if dt == DecisionType.safety_flag:
-        return f"⚠️ Safety check on {title}: {req.situation_text[:140]}"
+        return f"Safety check on {title}: {req.situation_text[:140]}"
     return req.situation_text[:160]
 
 

@@ -15,7 +15,6 @@ import os
 
 import httpx
 
-from delivery.base import TIER_EMOJI
 from shared.contracts.schema import DecisionRequest, RoutingDecision
 from supervisor import config
 
@@ -36,11 +35,10 @@ class TelnyxSMSDelivery:
         to = config.phone(request.org_id, decision.target_person)
         if not to:
             raise RuntimeError(f"no phone number for {decision.target_person.value}")
-        emoji = TIER_EMOJI.get(decision.urgency_tier.value, "")
         prefix = "[URGENT] " if decision.urgency_tier.value != "async" else ""
         base = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
         link = f"{base}/d/{request.request_id[:6]}"
-        body = f"{prefix}{emoji} {decision.suggested_message}\n→ {link}"
+        body = f"{prefix}{decision.suggested_message}\n{link}"
         payload = {"from": self.frm, "to": to, "text": body}
         if self.profile:
             payload["messaging_profile_id"] = self.profile
