@@ -17,6 +17,16 @@ class Store:
         self.requests: Dict[str, DecisionRequest] = {}
         self.decisions: Dict[str, RoutingDecision] = {}
         self.resolutions: Dict[str, HumanResolution] = {}
+        self.codes: Dict[str, str] = {}  # short link code -> request_id
+
+    def register_code(self, request_id: str) -> str:
+        code = request_id[:6]
+        with self._lock:
+            self.codes[code] = request_id
+        return code
+
+    def request_id_for(self, code: str) -> Optional[str]:
+        return self.codes.get(code)
 
     def add(self, req: DecisionRequest, decision: RoutingDecision) -> None:
         with self._lock:

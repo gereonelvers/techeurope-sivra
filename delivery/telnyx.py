@@ -20,7 +20,6 @@ from shared.contracts.schema import DecisionRequest, RoutingDecision
 from supervisor import config
 
 _API = "https://api.telnyx.com/v2/messages"
-_REPLY_HINT = "\n\nReply 1=Approve · 2=Counter · 3=Decline   (Y/N to rate)"
 
 
 class TelnyxSMSDelivery:
@@ -39,7 +38,9 @@ class TelnyxSMSDelivery:
             raise RuntimeError(f"no phone number for {decision.target_person.value}")
         emoji = TIER_EMOJI.get(decision.urgency_tier.value, "")
         prefix = "[URGENT] " if decision.urgency_tier.value != "async" else ""
-        body = f"{prefix}{emoji} {decision.suggested_message}{_REPLY_HINT}"
+        base = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
+        link = f"{base}/d/{request.request_id[:6]}"
+        body = f"{prefix}{emoji} {decision.suggested_message}\n→ {link}"
         payload = {"from": self.frm, "to": to, "text": body}
         if self.profile:
             payload["messaging_profile_id"] = self.profile

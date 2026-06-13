@@ -8,19 +8,20 @@
 """
 from __future__ import annotations
 
-import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 
 load_dotenv()  # pick up .env before router/delivery read their keys
 
 from shared.contracts.schema import DecisionRequest, HumanResolution, RoutingDecision
-from supervisor import dispatch, reward
+from supervisor import dispatch, service
 from supervisor.guardrail import extract_guardrail
 from supervisor.router import get_router
 from supervisor.store import STORE
+from supervisor.web import router as web_router
 
 app = FastAPI(title="Quartermaster Supervisor", version="0.1.0")
+app.include_router(web_router)
 _router = get_router()
 
 
@@ -34,6 +35,7 @@ def escalate(req: DecisionRequest) -> RoutingDecision:
     guardrail = extract_guardrail(req)
     decision = _router.route(req, guardrail)
     STORE.add(req, decision)
+    STORE.register_code(req.request_id)
     if decision.should_delegate:
         dispatch.dispatch(req, decision)
     return decision
@@ -41,20 +43,11 @@ def escalate(req: DecisionRequest) -> RoutingDecision:
 
 @app.post("/resolve/{request_id}", response_model=HumanResolution)
 def resolve(request_id: str, resolution: HumanResolution) -> HumanResolution:
-    req = STORE.requests.get(request_id)
-    decision = STORE.decisions.get(request_id)
-    if not req or not decision:
-        raise HTTPException(status_code=404, detail="unknown request_id")
     resolution.request_id = request_id
-    STORE.resolve(resolution)
-    reward.log_reward(req, decision, resolution)
-    # push the resolution back to the agent (fire-and-forget; agent also polls).
-    if req.callback_url:
-        try:
-            httpx.post(req.callback_url, json=resolution.model_dump(mode="json"), timeout=5)
-        except Exception:
-            pass
-    return resolution
+    try:
+        return service.resolve_request(resolution)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="unknown request_id")
 
 
 @app.get("/resolution/{request_id}", response_model=HumanResolution)
