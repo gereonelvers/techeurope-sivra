@@ -17,8 +17,11 @@ build/
 .env.local
 *.local
 
-# Data / artifacts
-data/
+# Data / artifacts — ignore runtime data, but DO track the synthetic text datasets
+data/*
+!data/datasets/
+data/datasets/*
+!data/datasets/*.jsonl
 *.sqlite
 *.db
 screenshots/
