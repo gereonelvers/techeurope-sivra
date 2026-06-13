@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Listing {
+  id           Int      @id @default(autoincrement())
+  site         String // "site-a" | "site-b" | "site-c"
+  baseItemId   Int // shared logical inventory id across sites
+  title        String
+  category     String
+  brand        String
+  condition    String // "New" | "Like New" | "Good" | "Fair"
+  priceCents   Int
+  currency     String   @default("EUR")
+  city         String
+  sellerName   String
+  sellerRating Float
+  imageUrl     String
+  description  String
+  createdAt    DateTime @default(now())
+
+  @@index([site, category, brand, condition, priceCents])
+  @@index([site, baseItemId])
+}
+
+model Episode {
+  id           String   @id @default(cuid())
+  site         String
+  // SQLite has no native JSON type; we store JSON as TEXT and (de)serialize
+  // in src/lib/json.ts. The logical type is still JSON.
+  taskSpec     String // Json
+  targetItemId Int?
+  targetAttrs  String? // Json
+  createdAt    DateTime @default(now())
+
+  events Event[]
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  episodeId String
+  site      String
+  step      Int
+  type      String
+  payload   String // Json (stored as TEXT, see src/lib/json.ts)
+  createdAt DateTime @default(now())
+
+  episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([episodeId, step])
+}
