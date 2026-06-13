@@ -41,6 +41,8 @@ CATALOG = {
 }
 CITIES = ["München", "Berlin", "Hamburg", "Köln", "Frankfurt"]
 SITES = ["site-a", "site-b", "site-c"]
+SINGULAR = {"Bikes": "bike", "Laptops": "laptop", "Phones": "phone",
+            "Cameras": "camera", "Furniture": "furniture", "Audio": "audio gear"}
 
 # decision_type sampling weights (chosen to give person/urgency variety)
 DTYPE_WEIGHTS = {
@@ -78,7 +80,7 @@ def gen_scenario(rng: random.Random) -> DecisionRequest:
     listed = _price(rng, lo, hi)
     city = rng.choice(CITIES)
     conf = round(rng.uniform(0.2, 0.98), 2)
-    item = Item(title=f"{title} ({cat[:-1]})", listed_price=listed, item_id=rng.randint(1, 999))
+    item = Item(title=f"{title} ({SINGULAR[cat]})", listed_price=listed, item_id=rng.randint(1, 999))
     proposed = None
     budget = None
     text = ""
