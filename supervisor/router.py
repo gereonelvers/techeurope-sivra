@@ -21,6 +21,7 @@ from supervisor import config
 VOICE_OVERAGE_RATIO = 1.5
 LOW_CONFIDENCE = 0.6
 VERY_LOW_CONFIDENCE = 0.4
+AUTO_APPROVE_MAX = 50.0  # the agent may auto-buy trivial, in-budget, high-confidence items
 
 _ALWAYS_DELEGATE = {
     DecisionType.safety_flag,
@@ -41,9 +42,22 @@ def _over_budget(req: DecisionRequest) -> bool:
     return bool(req.proposed_value and req.budget_cap and req.proposed_value > req.budget_cap)
 
 
+def _is_urgent(g: Guardrail) -> bool:
+    return g.urgency_prior in (UrgencyTier.urgent_push, UrgencyTier.voice)
+
+
 def _should_delegate(req: DecisionRequest, g: Guardrail) -> bool:
     if g.needs_signoff:
         return True
+    # the agent auto-handles a trivial, in-budget, high-confidence routine buy
+    if (
+        req.decision_type == DecisionType.approve_purchase
+        and _amount(req) <= AUTO_APPROVE_MAX
+        and req.agent_confidence >= 0.9
+        and not _over_budget(req)
+        and not _is_urgent(g)
+    ):
+        return False
     if req.decision_type in _ALWAYS_DELEGATE:
         return True
     if _over_budget(req):

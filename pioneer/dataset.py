@@ -90,10 +90,18 @@ def gen_scenario(rng: random.Random) -> DecisionRequest:
         text = f"Seller counter-offered €{proposed:.0f} for the {item.title} (listed €{listed:.0f}). My cap is €{budget:.0f}. {cue}".strip()
 
     elif dtype == DecisionType.approve_purchase:
-        budget = round(listed * rng.uniform(1.0, 3.0), 0)            # within budget
-        proposed = listed
-        cue = rng.choice(CALM_CUES + URGENT_CUES[:2])
-        text = f"Found an exact match for the {item.title} at €{listed:.0f}, condition Good, seller rating {rng.uniform(4.2,5.0):.1f}. Ready to buy. {cue}".strip()
+        if rng.random() < 0.45:  # trivial in-budget micro-buy -> agent auto-handles (negative class)
+            listed = float(rng.randint(8, 48))
+            item = Item(title=item.title, listed_price=listed, item_id=item.item_id)
+            conf = round(rng.uniform(0.9, 0.98), 2)
+            budget = round(listed * rng.uniform(2.0, 5.0), 0)
+            proposed = listed
+            text = f"Small in-budget buy: {item.title} for €{listed:.0f}, exact match, seller rating {rng.uniform(4.5,5.0):.1f}. Proceeding unless you object."
+        else:
+            budget = round(listed * rng.uniform(1.0, 3.0), 0)        # within budget
+            proposed = listed
+            cue = rng.choice(CALM_CUES + URGENT_CUES[:2])
+            text = f"Found an exact match for the {item.title} at €{listed:.0f}, condition Good, seller rating {rng.uniform(4.2,5.0):.1f}. Ready to buy. {cue}".strip()
 
     elif dtype == DecisionType.pickup_logistics:
         budget = round(listed * 2, 0)
