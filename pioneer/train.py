@@ -41,7 +41,7 @@ def main() -> int:
     ap.add_argument("--pipeclean", action="store_true", help="tiny cheap validation run")
     ap.add_argument("--limit", type=int, default=24, help="examples for the pipeclean run")
     ap.add_argument("--epochs", type=int, default=3)
-    ap.add_argument("--base-model", default=os.getenv("PIONEER_BASE_MODEL", "google/gemma-3-4b-it"))
+    ap.add_argument("--base-model", default=os.getenv("PIONEER_BASE_MODEL", "google/gemma-4-E2B-it"))
     ap.add_argument("--wait", action="store_true", help="poll the job to completion")
     args = ap.parse_args()
 
@@ -58,9 +58,9 @@ def main() -> int:
     print(f"dataset: {path.name} ({len(path.read_text().splitlines())} rows) -> '{name}'")
     print(f"base_model: {args.base_model}  epochs: {epochs}")
     try:
-        ds_id = c.upload_dataset(name, str(path), dataset_type="training", data_format="chat")
+        ds_id = c.upload_dataset(name, str(path), dataset_type="decoder", split="training")
         print(f"uploaded dataset id={ds_id}; waiting for it to be ready ...")
-        c.wait_dataset(ds_id)
+        c.wait_dataset(ds_id, name=name)
         job = c.create_training_job(model_name, args.base_model, name, nr_epochs=epochs)
         job_id = job.get("id") or job.get("data", {}).get("id")
         print(f"training job started: {job_id}")

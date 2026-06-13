@@ -38,8 +38,9 @@ class PioneerClient:
         self.h = {"X-API-Key": self.key}
         self.timeout = timeout
 
-    def _req(self, method: str, url: str, **kw):
-        r = httpx.request(method, url, headers={**self.h, **kw.pop("headers", {})}, timeout=self.timeout, **kw)
+    def _req(self, method: str, url: str, timeout: Optional[float] = None, **kw):
+        r = httpx.request(method, url, headers={**self.h, **kw.pop("headers", {})},
+                          timeout=timeout or self.timeout, **kw)
         if r.status_code >= 400:
             raise PioneerError(f"{method} {url} -> {r.status_code}: {r.text[:300]}")
         return r.json() if r.content else {}
@@ -55,32 +56,45 @@ class PioneerClient:
         return self._req("GET", f"{self.root}/felix/datasets")
 
     # ── dataset upload (3-step) ──────────────────────────────────────────────
-    def upload_dataset(self, name: str, jsonl_path: str, dataset_type: str = "training", data_format: str = "chat") -> str:
-        body = {"dataset_name": name, "dataset_type": dataset_type, "type": data_format,
+    # dataset_type ∈ {classification, ner, custom, decoder}; type(split) ∈ {training, evaluation, benchmark}
+    # The presigned PUT is signed for content-type application/octet-stream; process needs `format`.
+    def upload_dataset(self, name: str, jsonl_path: str, dataset_type: str = "decoder",
+                       split: str = "training", data_format: str = "chat") -> str:
+        body = {"dataset_name": name, "dataset_type": dataset_type, "type": split,
                 "filename": Path(jsonl_path).name}
         res = self._req("POST", f"{self.root}/felix/datasets/upload/url",
                         headers={"Content-Type": "application/json"}, json=body)
-        upload_url = res.get("upload_url") or res.get("url") or res.get("presigned_url")
+        upload_url = res.get("presigned_url") or res.get("upload_url") or res.get("url")
         dataset_id = res.get("dataset_id") or res.get("id")
         if not upload_url or not dataset_id:
             raise PioneerError(f"unexpected upload-url response: {res}")
         with open(jsonl_path, "rb") as f:
-            put = httpx.put(upload_url, content=f.read(), timeout=self.timeout)
+            put = httpx.put(upload_url, content=f.read(),
+                            headers={"Content-Type": "application/octet-stream"}, timeout=self.timeout)
         if put.status_code >= 400:
             raise PioneerError(f"S3 PUT failed: {put.status_code} {put.text[:200]}")
         self._req("POST", f"{self.root}/felix/datasets/upload/process",
-                  headers={"Content-Type": "application/json"}, json={"dataset_id": dataset_id})
+                  headers={"Content-Type": "application/json"},
+                  json={"dataset_id": dataset_id, "format": data_format})
         return dataset_id
 
-    def wait_dataset(self, dataset_id: str, poll: float = 5.0, timeout: float = 600.0) -> dict:
-        deadline = None  # Date.now unavailable in some envs; rely on iteration count instead
+    def _find_dataset(self, dataset_id: str, name: Optional[str]) -> Optional[dict]:
+        lst = self._req("GET", f"{self.root}/felix/datasets").get("datasets", [])
+        for d in lst:
+            if d.get("id") == dataset_id or d.get("dataset_id") == dataset_id:
+                return d
+            if name and (d.get("name") == name or d.get("dataset_name") == name):
+                return d
+        return None
+
+    def wait_dataset(self, dataset_id: str, name: Optional[str] = None, poll: float = 5.0, timeout: float = 600.0) -> dict:
         for _ in range(int(timeout // poll) + 1):
-            ds = self._req("GET", f"{self.root}/felix/datasets/{dataset_id}")
-            status = ds.get("status") or ds.get("data", {}).get("status")
-            if status in ("ready", "complete"):
+            ds = self._find_dataset(dataset_id, name) or {}
+            status = ds.get("status")
+            if status in ("ready", "complete", "completed"):
                 return ds
-            if status in ("failed", "error"):
-                raise PioneerError(f"dataset {dataset_id} failed: {ds}")
+            if status in ("failed", "error", "invalid"):
+                raise PioneerError(f"dataset processing failed: {ds}")
             time.sleep(poll)
         raise PioneerError(f"dataset {dataset_id} not ready in time")
 
@@ -93,7 +107,7 @@ class PioneerClient:
                 "nr_epochs": nr_epochs, "learning_rate": learning_rate}
         if extra:
             body.update(extra)
-        return self._req("POST", f"{self.root}/felix/training-jobs",
+        return self._req("POST", f"{self.root}/felix/training-jobs", timeout=300,
                          headers={"Content-Type": "application/json"}, json=body)
 
     def wait_job(self, job_id: str, poll: float = 30.0, timeout: float = 6 * 3600) -> dict:
