@@ -33,6 +33,7 @@ OUT_PATH = Path(__file__).resolve().parent.parent / "data" / "eval" / "results.j
 # rough 2026 list prices, USD per 1M tokens (input, output) — estimates for the cost slide
 PRICES = {
     "gpt-5.5-chat-latest": (1.25, 10.0),
+    "gpt-5.5": (1.25, 10.0),
     "gpt-5.4": (1.25, 10.0),
     "gpt-5.4-mini": (0.25, 2.0),
     "gpt-5-mini": (0.25, 2.0),
