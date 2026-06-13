@@ -1,0 +1,14 @@
+apps/
+agent/
+ui/
+pioneer/
+scripts/
+demo/
+data/
+.venv/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+.git/
+.env
+*.md
