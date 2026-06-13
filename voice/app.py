@@ -160,26 +160,29 @@ async def telnyx_webhook(request: Request):
     logger.info(f"telnyx webhook: {etype} ccid={ccid}")
 
     if etype == "call.answered" and ccid:
-        # Start bidirectional media streaming to our /media websocket.
+        # Start bidirectional media streaming to our /media websocket. Telnyx
+        # delivers inbound audio as base64 "media" frames and accepts the same
+        # frames back over the SAME socket when bidirectional rtp mode is on —
+        # which is exactly what Pipecat's TelnyxFrameSerializer speaks.
         try:
             stream_url = _media_ws_url()
         except Exception as e:  # noqa: BLE001
             logger.error(f"cannot stream: {e}")
             return {"ok": False}
-        r = await _telnyx(
-            "POST",
-            f"/calls/{ccid}/actions/streaming_start",
-            json={
-                "stream_url": stream_url,
-                "stream_track": "both_tracks",
-                "stream_bidirectional_mode": "rtp",
-                "stream_bidirectional_codec": "PCMU",  # 8 kHz mu-law both ways
-            },
-        )
+        stream_body = {
+            "stream_url": stream_url,
+            "stream_track": "both_tracks",
+            "stream_bidirectional_mode": "rtp",   # base64 media frames over the SAME ws
+            "stream_bidirectional_codec": "PCMU",  # 8 kHz mu-law both directions
+        }
+        r = await _telnyx("POST", f"/calls/{ccid}/actions/streaming_start", json=stream_body)
         if r.status_code >= 400:
-            logger.error(f"streaming_start failed {r.status_code}: {r.text}")
+            logger.error(f"streaming_start failed {r.status_code}: {r.text} (url={stream_url})")
         else:
             logger.info(f"streaming_start -> {stream_url} for {ccid}")
+
+    elif etype == "streaming.failed":
+        logger.error(f"streaming.failed payload: {payload}")
 
     elif etype in ("call.hangup", "call.machine.detection.ended") and ccid:
         CALLS.pop(ccid, None)
@@ -308,7 +311,11 @@ async def _run_bridge(ws: WebSocket) -> None:
         voice_id=GEMINI_VOICE,
         system_instruction=system_instruction,
         tools=tools,
-        model=os.getenv("GEMINI_LIVE_MODEL", "models/gemini-2.5-flash-native-audio-preview-12-2025"),
+        settings=GeminiLiveLLMService.Settings(
+            model=os.getenv(
+                "GEMINI_LIVE_MODEL", "models/gemini-2.5-flash-native-audio-preview-12-2025"
+            ),
+        ),
     )
 
     resolved = asyncio.Event()

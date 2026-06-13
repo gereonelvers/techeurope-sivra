@@ -76,6 +76,34 @@ def ensure_app(c: httpx.Client, webhook_url: str) -> dict:
     return app
 
 
+def ensure_outbound_profile(c: httpx.Client, connection_id: str) -> None:
+    """A Call Control connection needs an Outbound Voice Profile to place calls
+    (else Telnyx returns error D38). Attach the first enabled profile if none is set."""
+    app = c.get(f"/call_control_applications/{connection_id}").json()["data"]
+    if (app.get("outbound") or {}).get("outbound_voice_profile_id"):
+        print("[setup] outbound voice profile already attached")
+        return
+    r = c.get("/outbound_voice_profiles", params={"page[size]": 50})
+    r.raise_for_status()
+    profiles = [p for p in r.json().get("data", []) if p.get("enabled", True)]
+    if not profiles:
+        print(
+            "[setup] WARNING: no Outbound Voice Profile on this account. Create one in the "
+            "Telnyx portal (Voice > Outbound Voice Profiles) or outbound calls fail with D38.",
+            file=sys.stderr,
+        )
+        return
+    pid = profiles[0]["id"]
+    r = c.patch(
+        f"/call_control_applications/{connection_id}",
+        json={"outbound": {"outbound_voice_profile_id": pid}},
+    )
+    if r.status_code >= 400:
+        print(f"[setup] WARNING: could not attach outbound profile ({r.status_code}): {r.text}", file=sys.stderr)
+        return
+    print(f"[setup] attached outbound voice profile {pid} ({profiles[0].get('name')}) to connection")
+
+
 def assign_number(c: httpx.Client, connection_id: str, number: str) -> None:
     """Point TELNYX_FROM at this connection so outbound calls use this app."""
     r = c.get("/phone_numbers", params={"filter[phone_number]": number})
@@ -140,6 +168,7 @@ def main() -> int:
     with _client(key) as c:
         app = ensure_app(c, webhook_url)
         connection_id = app["id"]
+        ensure_outbound_profile(c, connection_id)
         assign_number(c, connection_id, frm)
 
     print("")

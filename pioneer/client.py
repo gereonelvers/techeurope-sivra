@@ -111,14 +111,16 @@ class PioneerClient:
                          headers={"Content-Type": "application/json"}, json=body)
 
     def wait_job(self, job_id: str, poll: float = 30.0, timeout: float = 6 * 3600) -> dict:
+        # terminal success statuses include "deployed"/"complete"; rely on is_terminal_status.
         for _ in range(int(timeout // poll) + 1):
             job = self.get_job(job_id)
-            status = job.get("status") or job.get("data", {}).get("status")
-            print(f"  job {job_id} status={status}")
-            if status in ("complete", "completed", "succeeded"):
+            status = job.get("status")
+            print(f"  job {job_id} status={status} epoch={job.get('current_epoch')} prog={job.get('progress_percent')}",
+                  flush=True)
+            if job.get("is_terminal_status"):
+                if status in ("errored", "failed", "error", "stopped", "cancelled"):
+                    raise PioneerError(f"job {job_id} ended: {status} - {job.get('error_message')}")
                 return job
-            if status in ("failed", "stopped", "error"):
-                raise PioneerError(f"job {job_id} ended: {status}")
             time.sleep(poll)
         raise PioneerError(f"job {job_id} not complete in time")
 
