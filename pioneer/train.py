@@ -41,7 +41,8 @@ def main() -> int:
     ap.add_argument("--pipeclean", action="store_true", help="tiny cheap validation run")
     ap.add_argument("--limit", type=int, default=24, help="examples for the pipeclean run")
     ap.add_argument("--epochs", type=int, default=3)
-    ap.add_argument("--base-model", default=os.getenv("PIONEER_BASE_MODEL", "google/gemma-4-E2B-it"))
+    # router is a TEXT task; use a clean text decoder (Gemma 4 vision goes on Modal, not here)
+    ap.add_argument("--base-model", default=os.getenv("PIONEER_BASE_MODEL", "Qwen/Qwen3-4B-Instruct-2507"))
     ap.add_argument("--wait", action="store_true", help="poll the job to completion")
     args = ap.parse_args()
 
