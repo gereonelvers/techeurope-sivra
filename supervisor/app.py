@@ -20,7 +20,7 @@ from supervisor.router import get_router
 from supervisor.store import STORE
 from supervisor.web import router as web_router
 
-app = FastAPI(title="Quartermaster Supervisor", version="0.1.0")
+app = FastAPI(title="sivra supervisor", version="0.1.0")
 app.include_router(web_router)
 _router = get_router()
 

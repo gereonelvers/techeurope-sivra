@@ -1,4 +1,4 @@
-# Quartermaster
+# sivra
 
 An orchestration layer where a fleet of **buyer agents** shop marketplace clones we
 own, and a **supervisor** pulls the *right human* in at the *right urgency* on their
