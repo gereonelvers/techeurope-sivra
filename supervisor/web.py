@@ -4,7 +4,7 @@
   POST /d/{code}    resolve + rate the delegation (no JS, no app)
 
 Design: warm-paper light theme, Fraunces (display serif) + Inter, near-monochrome
-with a single restrained accent. Reads like a considered AI-lab product.
+with a single restrained accent.
 """
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ router = APIRouter()
 
 _TIER = {"async": "Routine", "urgent_push": "Time-sensitive", "voice": "Urgent · call"}
 
-# minimal logo mark: an orbit — one supervisor node, a satellite agent
 _MARK = (
     '<svg class="mark" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">'
     '<circle cx="11" cy="11" r="9.2" stroke="currentColor" stroke-width="1.1" opacity=".45"/>'
@@ -37,30 +36,30 @@ _MARK = (
 
 _CSS = """
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-:root{--paper:#F4F2EB;--card:#FBFAF5;--ink:#1B1A15;--muted:#6B6759;--faint:#A39E8E;
+:root{--paper:#F4F2EB;--card:#FBFAF5;--ink:#1B1A15;--muted:#615D52;--faint:#A39E8E;
 --line:#E5E1D5;--line2:#EFEBE0;--accent:#3A357C;--warm:#A6592B;
---serif:'Fraunces',Georgia,'Times New Roman',serif;--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+--serif:'Fraunces',Georgia,serif;--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
 --mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,monospace}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
 -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-background:radial-gradient(120% 80% at 50% -10%,rgba(58,53,124,.06),transparent 60%)}
-.wrap{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px}
 .mono{font-family:var(--mono)}
-.brand{display:inline-flex;align-items:center;gap:8px;color:var(--ink);margin-bottom:26px;text-decoration:none}
+.brand{display:inline-flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
 .brand .mark{color:var(--accent)}
-.brand .wm{font-family:var(--serif);font-size:21px;font-weight:500;letter-spacing:-.01em}
-.eyebrow{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
-text-transform:uppercase;color:var(--muted);margin-bottom:20px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--faint);box-shadow:0 0 0 4px rgba(163,158,142,.14)}
-.dot.urgent{background:var(--warm);box-shadow:0 0 0 4px rgba(166,89,43,.16)}
-.dot.live{background:#3F9E74;box-shadow:0 0 0 4px rgba(63,158,116,.16)}
-/* card / reply */
+.brand .wm{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-.01em}
+/* shared centered layout (reply pages) */
+.wrap{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;
+position:relative}
+.wrap>.brand{margin-bottom:26px}
+.wrap::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+background:radial-gradient(120% 80% at 50% -10%,rgba(58,53,124,.06),transparent 60%)}
+/* reply card */
 .card{width:100%;max-width:486px;background:var(--card);border:1px solid var(--line);border-radius:22px;
 padding:32px 30px;box-shadow:0 1px 1px rgba(27,26,21,.03),0 24px 56px -20px rgba(27,26,21,.16)}
+.eyebrow{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}.dot.urgent{background:var(--warm)}
 h1.lead{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.28;letter-spacing:-.01em;margin:0 0 16px}
-.meta{font-size:14px;color:var(--muted);margin:0 0 26px}
-.meta b{color:#403C31;font-weight:600}
+.meta{font-size:14px;color:var(--muted);margin:0 0 26px}.meta b{color:#403C31;font-weight:600}
 .rationale{display:block;margin-top:7px;color:var(--faint);font-size:12.5px}
 form{margin:0}
 fieldset.rate{border:0;padding:0;margin:0 0 24px}
@@ -73,7 +72,7 @@ fieldset.rate label:hover{border-color:#CFCABA}
 fieldset.rate input:checked+label{border-color:var(--accent);color:var(--accent);
 background:rgba(58,53,124,.05);box-shadow:0 0 0 1px var(--accent) inset}
 .btn{display:block;width:100%;border:0;border-radius:13px;padding:15px;font-size:15px;font-weight:600;
-font-family:inherit;cursor:pointer;margin:11px 0;transition:.13s;letter-spacing:-.003em}
+font-family:inherit;cursor:pointer;margin:11px 0;transition:.13s}
 .btn.primary{background:var(--ink);color:#FBFAF5}.btn.primary:hover{background:#34322a}
 .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.ghost:hover{border-color:#c8c2b2}
 .btn.quiet{background:transparent;color:var(--faint);padding:12px;font-weight:500}.btn.quiet:hover{color:var(--muted)}
@@ -83,26 +82,45 @@ font-family:inherit;cursor:pointer;margin:11px 0;transition:.13s;letter-spacing:
 .field input{border:0;background:transparent;width:100%;padding:14px 6px;font-size:15px;font-family:inherit;color:var(--ink);outline:none}
 .counter-row .btn{width:auto;margin:0;padding:14px 22px}
 .foot{margin-top:26px;padding-top:17px;border-top:1px solid var(--line2);display:flex;justify-content:space-between;
-font-size:11.5px;color:var(--faint);letter-spacing:.01em}
+font-size:11.5px;color:var(--faint)}
 .center{text-align:center}
 .check{width:52px;height:52px;border-radius:50%;border:1px solid rgba(58,53,124,.25);color:var(--accent);
 display:flex;align-items:center;justify-content:center;margin:6px auto 20px;font-size:22px}
 /* landing */
-.hero{max-width:720px;text-align:center}
-.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,6.4vw,52px);line-height:1.06;
-letter-spacing:-.02em;margin:0 0 20px}
+.page{max-width:760px;margin:0 auto;padding:0 24px 72px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:26px 0 22px;margin-bottom:54px;border-bottom:1px solid var(--line)}
+.top .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.hero{margin-bottom:72px}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5.2vw,46px);line-height:1.1;
+letter-spacing:-.02em;margin:0 0 24px}
 .hero h1 em{font-style:italic;color:var(--accent)}
-.hero .sub{font-size:17px;color:var(--muted);max-width:540px;margin:0 auto 40px;line-height:1.55}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;text-align:left;border-top:1px solid var(--line);margin-bottom:38px}
-.step{padding:20px 18px 4px;border-right:1px solid var(--line)}
-.step:last-child{border-right:0}
-.step .n{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.12em;margin-bottom:9px}
-.step .t{font-family:var(--serif);font-size:18px;font-weight:500;margin-bottom:5px}
-.step .d{font-size:13px;color:var(--muted);line-height:1.5}
-.status{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);font-family:var(--mono);
-letter-spacing:.04em;border:1px solid var(--line);border-radius:999px;padding:8px 16px;background:var(--card)}
-.pagefoot{margin-top:30px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.08em}
-@media(max-width:560px){.steps{grid-template-columns:1fr;border-top:0}.step{border-right:0;border-top:1px solid var(--line);padding:18px 2px 14px}}
+.hero p{font-size:18px;color:var(--muted);max-width:60ch;line-height:1.62;margin:0}
+.sec{margin-bottom:66px}
+.sec-label{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.sec h2{font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:-.01em;margin:0 0 28px}
+/* run timeline */
+.tl{border-left:1px solid var(--line);margin-left:5px}
+.tl-item{position:relative;padding:0 0 26px 26px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-5.5px;top:5px;width:10px;height:10px;border-radius:50%;
+background:var(--paper);border:1.5px solid var(--accent)}
+.tl-item .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.tl-item p{margin:5px 0 0;font-size:15.5px;color:#39362D;line-height:1.6}
+.tl-item p b{color:var(--ink);font-weight:600}
+.sms{margin-top:13px;background:#fff;border:1px solid var(--line);border-radius:4px 14px 14px 14px;
+padding:13px 16px;max-width:430px;box-shadow:0 1px 1px rgba(27,26,21,.04)}
+.sms .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:5px}
+.sms .body{font-size:14.5px;color:var(--ink);line-height:1.5}
+.sms .lk{color:var(--accent);text-decoration:none}
+/* how */
+.point{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:24px 0;border-top:1px solid var(--line)}
+.point:last-child{border-bottom:1px solid var(--line)}
+.point .pn{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:3px}
+.point .pt{font-family:var(--serif);font-size:19px;font-weight:500;margin:0 0 7px;letter-spacing:-.005em}
+.point .pd{font-size:15px;color:var(--muted);line-height:1.62;margin:0}
+.site-foot{margin-top:18px;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);
+font-size:11px;letter-spacing:.06em;color:var(--faint);display:flex;justify-content:space-between}
+@media(max-width:560px){.hero p{font-size:16.5px}.top{margin-bottom:40px}}
 """
 
 _HEAD_OPEN = (
@@ -112,6 +130,7 @@ _HEAD_OPEN = (
 )
 _HEAD_REST = (
     "</title>"
+    '<meta name="description" content="sivra runs fleets of autonomous buying agents that shop, negotiate, and close deals — and brings a human in only when a real decision needs one.">'
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
     '<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">'
@@ -121,9 +140,47 @@ _HEAD_REST = (
 _BRAND = f'<a class="brand" href="/">{_MARK}<span class="wm">sivra</span></a>'
 
 
-def _page(title: str, inner: str, brand: bool = True) -> str:
+def _page(title: str, inner: str, brand: bool = True, layout: str = "center") -> str:
+    if layout == "page":
+        return _HEAD_OPEN + title + _HEAD_REST + f'<div class="page">{inner}</div></body></html>'
     top = _BRAND if brand else ""
     return _HEAD_OPEN + title + _HEAD_REST + f'<div class="wrap">{top}{inner}</div></body></html>'
+
+
+def _home() -> str:
+    inner = f"""
+<header class="top">{_BRAND}<span class="tag">Autonomous procurement</span></header>
+
+<section class="hero">
+  <h1>Agents that shop, negotiate, and buy for you. You only hear about the decisions that <em>actually</em> need a person.</h1>
+  <p>Tell sivra what you're after. It runs dozens of buying agents across marketplaces at once — filtering listings, messaging sellers, talking price — and runs the whole errand to the finish. When something genuinely needs you, it reaches the right person on the right channel, with everything they need to decide in a single tap.</p>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Example · one run, start to finish</div>
+  <h2>What a run looks like</h2>
+  <div class="tl">
+    <div class="tl-item"><span class="lab">The request</span><p>&ldquo;Used road bike, 56&nbsp;cm, under €400 — pickup in Munich this week.&rdquo;</p></div>
+    <div class="tl-item"><span class="lab">Dispatch</span><p>sivra spins up <b>24 agents</b> across three marketplaces. Each drives its site by sight — searching, filtering by frame size, opening listings, and messaging sellers — all in parallel.</p></div>
+    <div class="tl-item"><span class="lab">Shortlist</span><p>Within minutes they've worked the field down to three real candidates, and talked one seller from <b>€420 down to €385</b>.</p></div>
+    <div class="tl-item"><span class="lab">Escalation</span><p>One thing isn't sivra's call: pickup is Saturday 8&nbsp;pm in Wedding, outside your usual area. Not urgent — so it texts rather than calls.</p>
+      <div class="sms"><span class="who">sivra → you</span><span class="body">Specialized Allez 56&nbsp;cm for €385. Pickup Sat 8&nbsp;pm, Wedding — outside your usual area. Approve, counter, or decline?<br><span class="lk">sivra.io/d/6a2703</span></span></div></div>
+    <div class="tl-item"><span class="lab">Decision</span><p>You tap <b>Approve</b>. The agent confirms the handover with the seller and closes the deal. Time you spent: about eight seconds.</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">How it works</div>
+  <h2>Four ideas, one system</h2>
+  <div class="point"><div class="pn">01</div><div><p class="pt">Small agents, run wide</p><p class="pd">Each agent is a compact model fine-tuned to operate one marketplace by sight. Because they're small, sivra runs a hundred in parallel for the cost of a single frontier query — searching the whole market at once instead of one query at a time.</p></div></div>
+  <div class="point"><div class="pn">02</div><div><p class="pt">Escalation, not interruption</p><p class="pd">Most steps never reach you. sivra decides what genuinely needs a human and routes it — a quiet text for a routine confirmation, an urgent ping when a deal's about to slip, a phone call when it's complex — and to the right person, whether that's you, procurement, or a manager.</p></div></div>
+  <div class="point"><div class="pn">03</div><div><p class="pt">Decide from your phone, no app</p><p class="pd">Escalations arrive as a text with a link: approve, counter, or decline in one tap. For the urgent tier, sivra calls and talks the decision through with you, then carries out what you choose.</p></div></div>
+  <div class="point"><div class="pn">04</div><div><p class="pt">It compounds</p><p class="pd">sivra sharpens with every run. The agents learn from whether a purchase actually went through; the router learns who you'd really want pinged, and how loudly, from the calls you make. Next week's system is better than today's.</p></div></div>
+</section>
+
+<footer class="site-foot"><span>sivra — autonomous procurement, supervised</span><span>sivra.io</span></footer>
+"""
+    return _page("sivra — autonomous procurement, supervised", inner, layout="page")
 
 
 def _form(code: str, req, decision: RoutingDecision) -> str:
@@ -170,25 +227,6 @@ def _resolved(decision: RoutingDecision, res: HumanResolution) -> str:
   <p class="meta">Sent back to the agent — it's resuming the deal.{(' ' + note) if note else ''}</p>
   <div class="foot center" style="justify-content:center"><span class="mono">{res.request_id[:8]}</span></div>
 </div>""",
-    )
-
-
-def _home() -> str:
-    return _page(
-        "sivra — supervised autonomous procurement",
-        """<div class="hero">
-  <div class="eyebrow" style="justify-content:center"><span class="dot live"></span>Autonomous procurement, supervised</div>
-  <h1>A coordination layer for autonomous agents — and the <em>people</em> who back them.</h1>
-  <p class="sub">sivra runs fleets of buyer agents that find and negotiate real deals, and brings in a human — the right one, at the right urgency — only when it counts.</p>
-  <div class="steps">
-    <div class="step"><div class="n">01 / ACT</div><div class="t">Agents act</div><div class="d">Fleets search, compare, and negotiate across marketplaces.</div></div>
-    <div class="step"><div class="n">02 / ROUTE</div><div class="t">sivra routes</div><div class="d">Each escalation reaches the right person at the right urgency.</div></div>
-    <div class="step"><div class="n">03 / DECIDE</div><div class="t">You decide</div><div class="d">One tap to approve, counter, or decline — and it learns.</div></div>
-  </div>
-  <div class="status"><span class="dot live"></span>system live</div>
-  <div class="pagefoot">sivra.io</div>
-</div>""",
-        brand=True,
     )
 
 
