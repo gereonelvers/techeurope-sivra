@@ -19,7 +19,7 @@ Built for the {Tech: Europe} hackathon. Plan: `~/.claude/plans/tidy-meandering-m
 ```
 shared/contracts/   handoff contract (DecisionRequest / RoutingDecision / HumanResolution)
 supervisor/         guardrail (GLiNER2 + fallback), router, reward, store, FastAPI app
-delivery/           delivery backends (local stub now; Telegram + voice next)
+delivery/           delivery backends (Telnyx SMS + local stub; voice tier next)
 config/org.yaml     person -> chat_id -> budget routing table
 demo/               scenarios + live simulate_agent
 scripts/            check_delegation.py (offline end-to-end check)
@@ -50,5 +50,7 @@ The guardrail uses fast regex by default. To enable the real GLiNER2 extractor:
 ## Configuration
 
 Copy `.env.example` → `.env` and fill keys as you get them. Everything degrades
-gracefully: no `TELEGRAM_BOT_TOKEN` → console stub; no `PIONEER_*` → rules router.
-Set per-person `chat_id`s in `config/org.yaml` to enable real Telegram delivery.
+gracefully: no `TELNYX_API_KEY`/`TELNYX_FROM` → console stub; no Pioneer model →
+rules router. Set per-person `phone` numbers in `config/org.yaml` to enable real
+Telnyx SMS delivery (tiers a/b); the voice tier (c) uses Telnyx Call Control →
+Gemini Live.

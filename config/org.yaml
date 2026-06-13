@@ -1,18 +1,18 @@
 # Organisation routing table. Maps each person/role to a contact + spending
 # authority (budget). The router uses budget bands + decision ownership to pick
-# the *right person*; fill `whatsapp` numbers to enable real WhatsApp delivery.
+# the *right person*; fill `phone` numbers (E.164) to enable real Telnyx SMS.
 org-acme:
   people:
     buyer:
-      whatsapp: null        # e.g. "+49170..."  (the tester who joined the Twilio sandbox)
+      phone: null           # e.g. "+49170..."  (any mobile; SMS needs no opt-in)
       budget: 150
       label: "Buyer (you)"
     procurement_lead:
-      whatsapp: null
+      phone: null
       budget: 500
       label: "Procurement lead"
     manager:
-      whatsapp: null
+      phone: null
       budget: 5000
       label: "Manager"
 

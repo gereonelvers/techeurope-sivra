@@ -1,8 +1,10 @@
 """Picks the delivery backend and sends the delegation.
 
-Selection order: WhatsApp/Twilio (if TWILIO creds set) → local console stub. The
-voice tier (tier c) is reached as a follow-up (a phone call bridged to Gemini
-Live), so it isn't a separate top-level backend here.
+Selection order: Telnyx SMS (if TELNYX_API_KEY + TELNYX_FROM set) → local console
+stub. The voice tier (tier c) is reached as a follow-up (a Telnyx Call Control
+call bridged to Gemini Live), so it isn't a separate top-level backend here.
+
+Delivery failures never break escalation — the decision is still recorded.
 """
 from __future__ import annotations
 
@@ -16,15 +18,18 @@ from shared.contracts.schema import DecisionRequest, RoutingDecision
 
 @functools.lru_cache(maxsize=1)
 def get_delivery() -> Delivery:
-    if os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN"):
+    if os.getenv("TELNYX_API_KEY") and os.getenv("TELNYX_FROM"):
         try:
-            from delivery.whatsapp import WhatsAppDelivery
+            from delivery.telnyx import TelnyxSMSDelivery
 
-            return WhatsAppDelivery()
+            return TelnyxSMSDelivery()
         except Exception as e:  # pragma: no cover - falls back gracefully
-            print(f"[dispatch] WhatsApp unavailable ({e}); using local stub.")
+            print(f"[dispatch] Telnyx unavailable ({e}); using local stub.")
     return LocalStubDelivery()
 
 
 def dispatch(request: DecisionRequest, decision: RoutingDecision) -> None:
-    get_delivery().send(request, decision)
+    try:
+        get_delivery().send(request, decision)
+    except Exception as e:  # pragma: no cover - escalation must survive delivery errors
+        print(f"[dispatch] delivery failed ({e}); decision still recorded.")

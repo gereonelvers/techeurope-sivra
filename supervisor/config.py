@@ -35,9 +35,9 @@ def label(org_id: str, person: TargetPerson) -> str:
     return (p or {}).get("label", person.value)
 
 
-def whatsapp(org_id: str, person: TargetPerson) -> Optional[str]:
+def phone(org_id: str, person: TargetPerson) -> Optional[str]:
     p = people(org_id).get(person.value)
-    return (p or {}).get("whatsapp")
+    return (p or {}).get("phone")
 
 
 def decision_owner(org_id: str, decision_type: DecisionType) -> TargetPerson:

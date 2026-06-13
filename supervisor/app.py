@@ -9,7 +9,10 @@
 from __future__ import annotations
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+
+load_dotenv()  # pick up .env before router/delivery read their keys
 
 from shared.contracts.schema import DecisionRequest, HumanResolution, RoutingDecision
 from supervisor import dispatch, reward
