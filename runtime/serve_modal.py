@@ -195,9 +195,10 @@ def _coerce(obj: dict) -> dict:
     timeout=60 * 10,
     # GPU cost guardrails (account limit is 10 GPUs). HARD cap at 2 A100s so the
     # fleet's concurrent inference can never autoscale us to the limit, scale to
-    # zero when idle (no paying for warm GPUs between demos), release fast.
-    # Bump min_containers to 1 right before a live demo if you want it pre-warmed.
-    min_containers=1,
+    # zero when idle (no paying for warm GPUs), release fast.
+    # MAINTENANCE MODE: min_containers=0 — the A100 only spins up on demand when an
+    # order actually runs, then releases. Bump to 1 only for a live demo.
+    min_containers=0,
     max_containers=2,
     scaledown_window=60,
 )

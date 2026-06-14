@@ -130,10 +130,8 @@ SITES = ["site-a", "site-b", "site-c"]
     # the same box — cheap, since billing is per-second.
     cpu=4.0,
     memory=8192,
-    # Keep ONE mission worker warm so the first order of a demo doesn't pay the
-    # container + Chromium cold start (~15-30s to first tile). Scale to 0 after the
-    # demo to stop the idle cost (it's CPU-only — the GPU is the vision serve).
-    min_containers=1,
+    # Each mission gets its own container (spawned per order). Scale to zero when
+    # idle — fleets are bursty and per-order. (Bump min_containers to 1 for a demo.)
     max_containers=20,
 )
 async def run_fleet_mission(
@@ -1004,10 +1002,7 @@ async def _post_research_report(client, app_internal_url: str, token: str,
 # order launch request returns fast. The app POSTs to this endpoint URL directly
 # (ORCHESTRATOR_URL is the complete URL — no extra path appended).
 # ===========================================================================
-# Keep ONE launch container warm so the order-launch POST (8s app-side timeout)
-# never waits on a cold start. This is the lightweight endpoint, not the fleet
-# worker — cheap to pre-warm.
-@app.function(image=fleet_image, secrets=[fleet_secret], min_containers=1)
+@app.function(image=fleet_image, secrets=[fleet_secret])
 @modal.fastapi_endpoint(method="POST", docs=True)
 def launch(payload: dict):
     """Trigger a supervisor-orchestrated buyer-agent fleet for one order.
@@ -1064,42 +1059,6 @@ def launch(payload: dict):
         "budgetCents": budget_cents,
         "spawnId": call.object_id,
     }
-
-
-# ---------------------------------------------------------------------------
-# Keep-warm cron: the Pioneer (Fastino) router has a ~55s COLD START. A live
-# escalation that hits a cold router would hang for ~a minute. We ping the
-# supervisor /route on a short schedule so the model stays hot. Stateless: /route
-# does no DB write, so this creates no data — it just keeps the model warm.
-# (Remove this function + redeploy to stop it once the demo's over.)
-# ---------------------------------------------------------------------------
-SUPERVISOR_ROUTE_URL = os.environ.get(
-    "SUPERVISOR_URL", "https://supervisor-production-3deb.up.railway.app"
-).rstrip("/") + "/route"
-
-
-@app.function(image=fleet_image, schedule=modal.Period(minutes=3))
-def keep_router_warm():
-    import httpx
-
-    payload = {
-        "request": {
-            "request_id": "keepwarm",
-            "org_id": "keepwarm",
-            "decision_type": "approve_purchase",
-            "situation_text": "Approve buying an office chair for 420 euros, above the limit?",
-            "proposed_value": 420.0,
-            "budget_cap": 150.0,
-            "agent_confidence": 0.8,
-            "item": {"title": "Office chair", "listed_price": 420.0,
-                     "currency": "EUR", "item_id": None, "url": None},
-        }
-    }
-    try:
-        r = httpx.post(SUPERVISOR_ROUTE_URL, json=payload, timeout=90.0)
-        print(f"[keep-warm] /route -> {r.status_code}")
-    except Exception as e:
-        print(f"[keep-warm] error: {type(e).__name__}: {e}")
 
 
 # ---------------------------------------------------------------------------
