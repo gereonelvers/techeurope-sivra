@@ -1,0 +1,348 @@
+// sivra — product data model (Postgres). Single source of truth for all workstreams.
+// Owned exclusively by apps/web (Prisma). Python services NEVER write here; the
+// orchestrator/voice services call apps/web HTTP APIs which persist via Prisma.
+// Money is always integer cents. Every product query MUST be scoped by orgId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Auth.js (NextAuth v5) ─────────────────────────
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  // E.164, normalized via lib/phone.ts. One phone ↔ one account (matches inbound
+  // callers; receives escalations). `phoneVerifiedAt` is set when ownership is
+  // confirmed by clicking the SMS link (possession of the link = proof).
+  phone           String?    @unique
+  phoneVerifiedAt DateTime?
+  // Provisional accounts are created when an unknown phone calls in; they hold
+  // the order until the caller claims it (adds email + org name) via the SMS link.
+  isProvisional Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+  ordersCreated Order[]      @relation("OrderRequester")
+  resolutions   Escalation[] @relation("EscalationResolver")
+  invitesSent   Invite[]     @relation("InviteInviter")
+  auditEvents   OrderEvent[] @relation("AuditActorUser")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// SMS-link tokens. The link we text someone IS the proof of phone ownership
+// (only they receive it). Two kinds:
+//   CLAIM   — an unknown caller's order is parked in a provisional account;
+//             clicking the link opens /claim/:token to finish sign-up.
+//   CONFIRM — a signed-in user added a phone on the website; clicking the link
+//             confirms it and sets User.phone + phoneVerifiedAt.
+model PhoneVerification {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  phone      String    // normalized E.164
+  kind       String    // "CLAIM" | "CONFIRM"
+  userId     String?   // provisional user (CLAIM) or the signed-in user (CONFIRM)
+  orgId      String?   // provisional org (CLAIM)
+  orderId    String?   // the order to surface after claim (CLAIM)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+}
+
+// ───────────────────────── Tenancy ─────────────────────────
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Organization {
+  id          String             @id @default(cuid())
+  name        String
+  slug        String             @unique
+  // Default browsing-fleet size tier for new searches: SMALL | MEDIUM | DEEP.
+  // Per-order `Order.fleetTier` overrides this; see lib/fleet-tiers.ts.
+  defaultFleetTier String        @default("MEDIUM")
+  createdAt   DateTime           @default(now())
+  memberships Membership[]
+  orders      Order[]
+  policies    PermissionPolicy[]
+  invites     Invite[]
+  escalations Escalation[]
+}
+
+model Membership {
+  id                  String       @id @default(cuid())
+  orgId               String
+  userId              String
+  role                OrgRole      @default(MEMBER) // app RBAC
+  purchasingRole      String?      // routing label: "buyer" | "procurement_lead" | "manager"
+  approvalLimitCents  Int?         // max this member may approve
+  createdAt           DateTime     @default(now())
+  org                 Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  escalationsTargeted Escalation[] @relation("EscalationTarget")
+
+  @@unique([orgId, userId])
+  @@index([orgId])
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  orgId          String
+  email          String
+  role           OrgRole      @default(MEMBER)
+  purchasingRole String?
+  token          String       @unique @default(cuid())
+  invitedById    String?
+  acceptedAt     DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invitedBy      User?        @relation("InviteInviter", fields: [invitedById], references: [id])
+
+  @@index([orgId])
+  @@index([email])
+}
+
+// ───────────── Per-org customizable escalation / permission rules ─────────────
+model PermissionPolicy {
+  id                  String       @id @default(cuid())
+  orgId               String
+  name                String       @default("Default policy")
+  isDefault           Boolean      @default(true)
+  // ordered rules: [{ maxBudgetCents:int|null, targetPurchasingRole:str, urgency:"async|urgent_push|voice", autoApprove:bool, minConfidence:float }]
+  rules               Json
+  autoApproveMaxCents Int          @default(5000)
+  voiceOverageRatio   Float        @default(1.5)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  org                 Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+// ───────────────────────── Orders ─────────────────────────
+enum OrderStatus {
+  DRAFT
+  SEARCHING
+  ESCALATED
+  APPROVED
+  DECLINED
+  PURCHASING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum IntakeChannel {
+  CHAT
+  VOICE
+  API
+}
+
+model Order {
+  id               String        @id @default(cuid())
+  orgId            String
+  requestedById    String?
+  title            String
+  description      String?
+  category         String?
+  brand            String?
+  maxBudgetCents   Int?
+  currency         String        @default("EUR")
+  status           OrderStatus   @default(DRAFT)
+  intakeChannel    IntakeChannel @default(CHAT)
+  // orchestrator linkage
+  missionId        String?
+  nAgents          Int?
+  // Browsing-fleet size tier for THIS search: SMALL | MEDIUM | DEEP. Null → fall
+  // back to the org's defaultFleetTier at launch. Maps to agent count in
+  // lib/fleet-tiers.ts; the resolved count is persisted to nAgents.
+  fleetTier        String?
+  // result / receipt
+  resultItemId     Int?
+  resultTitle      String?
+  resultPriceCents Int?
+  receipt          Json?
+  report           Json?         // latest ResearchReport from the supervisor (see RESEARCH-FLOW.md)
+  researchRound    Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  completedAt      DateTime?
+  org              Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  requestedBy      User?         @relation("OrderRequester", fields: [requestedById], references: [id])
+  events           OrderEvent[]
+  escalations      Escalation[]
+  messages         ChatMessage[]
+
+  @@index([orgId, status])
+  @@index([orgId, createdAt])
+}
+
+// Append-only audit log — the "fully auditable" backbone. Never updated/deleted.
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  orgId       String
+  type        String   // created|search_started|agent_spawned|candidate_found|escalated|notified|approved|declined|purchased|completed|failed|note|message
+  actorType   String   // user|agent|system|approver
+  actorUserId String?
+  message     String?
+  data        Json?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorUser   User?    @relation("AuditActorUser", fields: [actorUserId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@index([orgId, createdAt])
+}
+
+// Chat intake transcript (chat + voice both write here)
+model ChatMessage {
+  id        String   @id @default(cuid())
+  orderId   String
+  role      String   // user|assistant|system
+  content   String
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+// ───────────── Escalations (the delegation + reward audit record) ─────────────
+enum UrgencyTier {
+  ASYNC
+  URGENT_PUSH
+  VOICE
+}
+
+enum EscalationStatus {
+  PENDING
+  RESOLVED
+  EXPIRED
+}
+
+// ───────────── Delegation-router model config + retrain audit ─────────────
+// The Pioneer delegation router is retrained from feedback, evaluated against the
+// current champion, and promoted by a DB write (no redeploy). RouterConfig is a
+// GLOBAL singleton: which fine-tuned model is live, and the auto-retrain knobs.
+model RouterConfig {
+  id                     String   @id @default(cuid())
+  // The live Pioneer model — addressed by its training-job id in /v1/chat/completions.
+  activeModelId          String
+  baseModel              String   @default("Qwen/Qwen3-4B-Instruct-2507")
+  version                Int      @default(1)
+  autoRetrainEnabled     Boolean  @default(true)
+  minSamples             Int      @default(50)
+  lastTrainedAt          DateTime?
+  lastTrainedSampleCount Int      @default(0)
+  updatedAt              DateTime @updatedAt
+}
+
+// One row per auto-retrain attempt — the promote/keep audit trail surfaced in the
+// admin page. championScores/challengerScores hold {person_acc, urgency_acc,
+// delegate_acc, exact_match} from the held-out eval.
+model ModelTrainingRun {
+  id                String    @id @default(cuid())
+  startedAt         DateTime  @default(now())
+  finishedAt        DateTime?
+  status            String    @default("running") // running | succeeded | failed
+  triggeredBy       String    @default("cron")    // cron | manual
+  sampleCount       Int       @default(0)
+  datasetId         String?
+  championModelId   String?
+  challengerModelId String?
+  championScores    Json?
+  challengerScores  Json?
+  decision          String?   // promoted | kept | failed | skipped
+  notes             String?
+
+  @@index([startedAt])
+}
+
+model Escalation {
+  id                   String           @id @default(cuid())
+  orgId                String
+  orderId              String?
+  requestId            String           @unique // cross-service id (DecisionRequest.request_id)
+  code                 String           @unique // random capability token for reply links (NOT guessable)
+  decisionType         String
+  situationText        String
+  proposedValueCents   Int?
+  budgetCapCents       Int?
+  agentConfidence      Float?
+  // routing decision (from the supervisor /route brain)
+  shouldDelegate       Boolean          @default(true)
+  targetPurchasingRole String?
+  targetMembershipId   String?
+  urgencyTier          UrgencyTier      @default(ASYNC)
+  suggestedMessage     String?
+  routerVersion        String?
+  routing              Json?
+  guardrail            Json?
+  // resolution + reward signal
+  status               EscalationStatus @default(PENDING)
+  resolution           String?          // approve|counter|decline
+  resolvedValueCents   Int?
+  notes                String?
+  resolvedById         String?
+  resolvedByLabel      String?
+  rating               String?          // good|partial|wrong
+  correctedRole        String?
+  correctedUrgency     String?
+  rewardScalar         Float?
+  latencyMs            Int?
+  createdAt            DateTime         @default(now())
+  resolvedAt           DateTime?
+  org                  Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  order                Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  targetMembership     Membership?      @relation("EscalationTarget", fields: [targetMembershipId], references: [id])
+  resolvedBy           User?            @relation("EscalationResolver", fields: [resolvedById], references: [id])
+
+  @@index([orgId, status])
+  @@index([requestId])
+}

@@ -1,0 +1,11 @@
+# Keep the `railway up` upload lean. The Dockerfile reinstalls node_modules and
+# rebuilds .next, so they must NOT be uploaded. The seeded prisma/dev.db IS
+# uploaded on purpose (it is baked into the image).
+node_modules
+.next
+.git
+*.tsbuildinfo
+.DS_Store
+prisma/dev.db-journal
+prisma/*.db-wal
+prisma/*.db-shm

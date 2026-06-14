@@ -10,6 +10,7 @@ COPY shared ./shared
 COPY supervisor ./supervisor
 COPY delivery ./delivery
 COPY config ./config
+COPY pioneer ./pioneer
 
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn supervisor.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

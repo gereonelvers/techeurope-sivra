@@ -1,10 +1,7 @@
 apps/
 agent/
 ui/
-pioneer/
-scripts/
 demo/
-data/
 .venv/
 **/node_modules/
 **/__pycache__/
@@ -12,3 +9,7 @@ data/
 .git/
 .env
 *.md
+# NOTE: pioneer/, data/, scripts/ are intentionally NOT ignored: the
+# retrain_cron image (retrain_cron/Dockerfile, built from the repo root) COPYs
+# pioneer/ + data/datasets/. Other images (supervisor, etc.) only COPY their own
+# dirs, so keeping these in the context doesn't affect them.

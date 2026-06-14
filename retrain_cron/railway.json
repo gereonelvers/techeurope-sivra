@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "retrain_cron/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "python retrain_cron/run.py",
+    "cronSchedule": "0 3 * * *",
+    "restartPolicyType": "NEVER"
+  }
+}

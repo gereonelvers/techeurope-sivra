@@ -118,6 +118,11 @@ class RoutingDecision(BaseModel):
     rationale: str = ""
     model_version: str = "rules-v0"
     guardrail: Optional[Guardrail] = None
+    # Policy-driven routing (additive, stateless /route). `target_person` stays
+    # populated for back-compat; these carry the org's own purchasing-role taxonomy
+    # and the concrete membership resolved from the policy's member roster.
+    target_purchasing_role: Optional[str] = None
+    target_membership_id: Optional[str] = None
     decided_at: datetime = Field(default_factory=_now)
 
 

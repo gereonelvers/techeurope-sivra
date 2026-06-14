@@ -10,8 +10,11 @@ python-dotenv>=1.0
 # Frontier eval + Pioneer (OpenAI-compatible) client
 openai>=1.40
 
+# Feedback->retrain loop A: read resolved Escalation rows from Postgres
+# (pioneer/feedback_dataset.py). Public Railway proxy URL in .env DATABASE_URL.
+psycopg[binary]>=3.1
+
 # Optional ML / heavy deps live in requirements-ml.txt:
 #   gliner2[local]   (guardrail; CPU)   — pip install 'gliner2[local]'
-#   openai anthropic google-genai       (eval-vs-frontier + Gemini Live)
+#   openai anthropic google-genai       (eval-vs-frontier)
 #   unsloth trl peft vllm transformers  (buyer-agent fine-tune; GPU/Modal)
-#   pipecat-ai                          (voice tier)

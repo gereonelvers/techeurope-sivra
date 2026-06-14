@@ -1,0 +1,16 @@
+# Build context excludes. NOTE: prisma/dev.db is intentionally NOT ignored —
+# the seeded SQLite database must ship in the Docker image.
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo
+# Local dev journal/WAL sidecars (the main dev.db IS included on purpose).
+prisma/dev.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+Dockerfile
+.dockerignore
+README.md
