@@ -5,7 +5,7 @@ Here we set up the *inbound* path: an employee CALLS our number and places a
 purchase order by voice.
 
 What it creates / reconciles (all idempotent — safe to re-run):
-  1. A NEW inbound ordering ConvAI agent ("sivra Quartermaster Ordering"), kept
+  1. A NEW inbound ordering ConvAI agent ("sivra Ordering"), kept
      SEPARATE from the outbound escalation agent (agent_8501kv0...). It greets the
      caller, asks what they want to buy + an approximate budget + key details,
      reads it back, calls the `create_order` webhook tool ONCE, confirms, and ends.
@@ -72,7 +72,7 @@ INTAKE_URL = f"{INTAKE_BASE}/api/voice/intake"
 # Voice: "Charlotte" — natural, warm. Override with EL_VOICE_ID.
 VOICE_ID = os.environ.get("EL_INBOUND_VOICE_ID", os.environ.get("EL_VOICE_ID", "XB0fDUnXU5powFXDhCwa"))
 LLM = os.environ.get("EL_INBOUND_LLM", os.environ.get("EL_LLM", "gemini-2.5-flash"))
-AGENT_NAME = os.environ.get("EL_INBOUND_AGENT_NAME", "sivra Quartermaster Ordering")
+AGENT_NAME = os.environ.get("EL_INBOUND_AGENT_NAME", "sivra Ordering")
 
 # The shared SIP-trunk number (does outbound escalation today; we add inbound).
 INBOUND_NUMBER = os.environ.get("TELNYX_FROM", "+14472154920")

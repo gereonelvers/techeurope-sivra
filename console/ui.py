@@ -154,7 +154,7 @@ def render_page(*, supervisor_url: str, voice_url: str, demo_phone: str, alpha_s
     brand = (
         f'<a class="brand" href="/">{_MARK}<span class="wm">sivra <span class="sub">· console</span></span></a>'
     )
-    demo_masked = demo_phone or "(QM_DEMO_PHONE unset)"
+    demo_masked = demo_phone or "(SIVRA_DEMO_PHONE unset)"
 
     body = f"""
 <div class="page">

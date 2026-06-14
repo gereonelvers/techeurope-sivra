@@ -9,8 +9,7 @@ the routing model **retrains from human feedback**.
 
 It targets *tail spend* — the high-volume, low-individual-value buying that is too
 small to warrant a procurement officer per request but too frequent to ignore.
-sivra started life as a {Tech: Europe} hackathon project codenamed
-**Quartermaster**; the product name is **sivra** and the live app is
+sivra was built as a {Tech: Europe} hackathon project; the live app is
 [sivra.io](https://sivra.io).
 
 > **Honesty note.** This is a hackathon build. The product app, the delegation/
@@ -20,8 +19,9 @@ sivra started life as a {Tech: Europe} hackathon project codenamed
 > model was wired end-to-end on Modal but the overfit LoRA adapter has not been
 > trained to accuracy, so the fleet's *navigation* is unreliable. To keep reports
 > truthful the supervisor **grounds every candidate against real marketplace
-> listings** rather than trusting the agents' clicks. Places where something is a
-> stub or demo lever are called out inline below.
+> listings** and **cross-references the live web via Tavily** rather than trusting
+> the agents' clicks. Places where something is a stub or demo lever are called out
+> inline below.
 
 ---
 
@@ -37,9 +37,10 @@ Order(DRAFT) ──launch──▶ SEARCHING
    │                        │
    │            supervisor-orchestrated browsing fleet (Modal)
    │            • N buyer agents shop the marketplaces in parallel
+   │            • Tavily searches the live web in parallel
    │            • supervisor narrates progress to the audit trail
    │            • candidates grounded against real listings
-   │            • Gemini aggregates → ResearchReport
+   │            • Gemini aggregates → ResearchReport (+ live-web results)
    │                        │
    │                        ▼
    │            app decides on the report:
@@ -96,9 +97,21 @@ container a **supervisor agent (Gemini 3.1 Pro)** runs the whole mission:
   deterministic fallback report is always produced, so a missing Gemini key never
   blocks the mission.
 
+- **A live-web search (Tavily) runs alongside the sandbox fleet.** The moment a
+  search launches, the mission also fires a [Tavily](https://docs.tavily.com)
+  query for the goal (visible in the audit trail: "Searching the live web
+  (Tavily)…"). Its real-internet results — titles, source domains, links, and
+  prices pulled from the snippets/answer by Gemini — fold into the same
+  `ResearchReport` as a `webResults` array, with a guaranteed raw fallback if
+  Gemini can't enrich them. These are a real-world cross-reference kept separate
+  from the buyable marketplace inventory, so the report **always surfaces real
+  options** even when the overfit agents come up thin; the order detail renders
+  them under "From the live web".
+
   *Stub note:* because the vision LoRA is untrained, the truthful prices come from
-  the grounding pass, not the agents' navigation. The agents are real and run; the
-  report's numbers are deliberately not trusted to their clicks.
+  the grounding pass (and the Tavily cross-reference), not the agents' navigation.
+  The agents are real and run; the report's numbers are deliberately not trusted to
+  their clicks.
 
 **3. The decision — back in the app (`/api/internal/orders/:id/research`).**
 The fleet does **not** decide; it posts the report and the app reacts
@@ -193,7 +206,8 @@ query is org-scoped.
 Modal (GPU serving + the sandboxed browser fleet) · Playwright (Chromium) · a
 fine-tuned **Gemma-family vision model** (`google/gemma-4-E2B-it` + LoRA, served
 on an A100; trained with Unsloth `FastVisionModel` + TRL) · **Gemini 3.1 Pro**
-supervisor for aggregation (falls back to `gemini-2.5-flash`).
+supervisor for aggregation (falls back to `gemini-2.5-flash`) · **Tavily** for the
+parallel live-web search that's folded into the research report.
 
 **Delegation & comms**
 FastAPI supervisor · **Pioneer (Fastino)** for the delegation router (a LoRA
@@ -279,7 +293,8 @@ RESEARCH-FLOW.md     The research → decision (auto-buy vs escalate) flow.
   `TELNYX_ALPHA_SENDER`; `DISPATCH_DRY_RUN` to log instead of send.
 - **Router:** `PIONEER_API_KEY`, `PIONEER_ROUTER_MODEL`, `PIONEER_BASE_URL`.
 - **Fleet (Modal secret `sivra-fleet`):** `INTERNAL_API_TOKEN`, `APP_INTERNAL_URL`,
-  `MISSION_CONTROL_URL`, `MARKETPLACE_URL`, `VISION_ENDPOINT`, `GEMINI_API_KEY`.
+  `MISSION_CONTROL_URL`, `MARKETPLACE_URL`, `VISION_ENDPOINT`, `GEMINI_API_KEY`;
+  plus a separate Modal secret `tavily` → `TAVILY_API_KEY` (parallel live-web search).
 - **Voice:** `ELEVEN_API_KEY`, `EL_AGENT_ID`, `EL_INBOUND_AGENT_ID`,
   `EL_PHONE_NUMBER_ID`.
 - **Vision FT / Modal:** `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`,

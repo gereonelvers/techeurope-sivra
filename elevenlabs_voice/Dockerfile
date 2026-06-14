@@ -1,4 +1,4 @@
-# sivra Quartermaster Voice — ElevenLabs Conversational AI edition.
+# sivra Voice — ElevenLabs Conversational AI edition.
 # Thin FastAPI service: takes POST /call from the supervisor and starts an
 # ElevenLabs ConvAI outbound call (ElevenLabs -> Telnyx SIP -> PSTN). No audio
 # stack, no Pipecat — ElevenLabs runs the whole call server-side.

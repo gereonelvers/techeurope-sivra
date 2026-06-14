@@ -5,7 +5,7 @@
 //   0. start the Next.js standalone server on a free port (no supervisor needed —
 //      launchOrder only flips status + best-effort orchestrator, which we disable)
 //   1. seed an org + a user whose `phone` is set (E.164). Also seed the DEMO
-//      caller (QM_DEMO_PHONE from the env) so a live inbound call resolves.
+//      caller (SIVRA_DEMO_PHONE from the env) so a live inbound call resolves.
 //   2. POST a simulated intake from the seeded phone (in a "messy" format, no +)
 //      → assert an Order is created under that user's org, VOICE channel,
 //        requestedById = the seeded user, status launched to SEARCHING.
@@ -25,7 +25,7 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 const WEB_ROOT = path.resolve(__dirname, "..");
 
 // Minimal dotenv that never clobbers an already-set value. We load apps/web/.env
-// (for DATABASE_URL / INTERNAL_API_TOKEN) AND the repo-root .env (for QM_DEMO_PHONE).
+// (for DATABASE_URL / INTERNAL_API_TOKEN) AND the repo-root .env (for SIVRA_DEMO_PHONE).
 function loadDotenv(file: string) {
   let raw: string;
   try {
@@ -55,8 +55,8 @@ import { prisma } from "@/lib/db";
 
 const INTERNAL_TOKEN = process.env.INTERNAL_API_TOKEN ?? "smoke-internal-token";
 // The real demo caller (so a live inbound call from this phone resolves). Falls
-// back to a fixed E.164 if QM_DEMO_PHONE isn't present in the env.
-const DEMO_PHONE = (process.env.QM_DEMO_PHONE ?? "+14155550123").trim();
+// back to a fixed E.164 if SIVRA_DEMO_PHONE isn't present in the env.
+const DEMO_PHONE = (process.env.SIVRA_DEMO_PHONE ?? "+14155550123").trim();
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(`assertion failed: ${msg}`);
@@ -117,7 +117,7 @@ async function main() {
     });
     orgId = org.id;
 
-    // The demo caller — phone set to QM_DEMO_PHONE so a real inbound call resolves.
+    // The demo caller — phone set to SIVRA_DEMO_PHONE so a real inbound call resolves.
     const callerUser = await prisma.user.create({
       data: {
         email: `caller+${stamp}@example.com`,

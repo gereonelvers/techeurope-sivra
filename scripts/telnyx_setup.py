@@ -1,4 +1,4 @@
-"""Idempotently provision Telnyx for SMS: ensure a 'Quartermaster' messaging
+"""Idempotently provision Telnyx for SMS: ensure a 'sivra' messaging
 profile exists and the TELNYX_FROM number is attached to it. Run once:
     python scripts/telnyx_setup.py
 """
@@ -18,7 +18,7 @@ KEY = os.environ["TELNYX_API_KEY"]
 NUMBER = os.environ["TELNYX_FROM"]
 H = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 BASE = "https://api.telnyx.com/v2"
-PROFILE_NAME = "Quartermaster"
+PROFILE_NAME = "sivra"
 
 
 def main() -> int:

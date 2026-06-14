@@ -1,4 +1,4 @@
-"""Quartermaster supervisor service.
+"""sivra supervisor service.
 
   POST /escalate            buyer agent submits a DecisionRequest -> RoutingDecision
   POST /resolve/{id}        human (or Telegram callback) submits a HumanResolution

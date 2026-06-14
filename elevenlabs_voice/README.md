@@ -1,4 +1,4 @@
-# sivra · Quartermaster Voice — ElevenLabs Conversational AI edition
+# sivra · Voice — ElevenLabs Conversational AI edition
 
 The voice tier, rebuilt on **ElevenLabs Conversational AI**, replacing the flaky
 Gemini-Live ⇄ Telnyx media bridge. When an escalation is urgent+complex
@@ -33,7 +33,7 @@ elevenlabs_voice/
 
 ## The ConvAI agent
 
-- **agent_id:** `agent_8501kv0thytseyvs2tsb7sbyzaz7` (name: "sivra Quartermaster Voice")
+- **agent_id:** `agent_8501kv0thytseyvs2tsb7sbyzaz7` (name: "sivra Voice")
 - LLM `gemini-2.5-flash`, voice **Charlotte** (`XB0fDUnXU5powFXDhCwa`), `eleven_turbo_v2` TTS.
 - **Dynamic variables** per call: `{{request_id}}`, `{{context}}`, `{{person}}`.
 - **First message** greets `{{person}}` and states `{{context}}`.
@@ -81,7 +81,7 @@ agent is untouched.
 
 ### The inbound ordering agent
 
-- **agent_id:** `agent_9501kv12skmjevpsq4g0pnd01z6b` (name: "sivra Quartermaster Ordering")
+- **agent_id:** `agent_9501kv12skmjevpsq4g0pnd01z6b` (name: "sivra Ordering")
 - LLM `gemini-2.5-flash`, voice **Charlotte** (`XB0fDUnXU5powFXDhCwa`), `eleven_turbo_v2` TTS.
 - **Flow:** greet → ask what they want to buy → get an approximate budget (euros) +
   key details (brand/condition) → **read it back** → call `create_order` **once** →
@@ -119,7 +119,7 @@ agent is untouched.
   - **outbound** → driven by the explicit `agent_id` in the `/call` request (the
     escalation agent).
 - **Telnyx side — how an inbound PSTN call reaches ElevenLabs:** the number was
-  **repointed** in Telnyx from the old "Quartermaster Voice (Gemini Live bridge)"
+  **repointed** in Telnyx from the old "sivra Voice (Gemini Live bridge)"
   connection to the FQDN SIP connection **`VoxGuard-intern`** (`2900679085086738176`),
   whose single FQDN is **`sip.rtc.elevenlabs.io:5060`**. So a call **to** `+14472154920`
   is delivered by Telnyx as a SIP INVITE to ElevenLabs, which hands it to the assigned

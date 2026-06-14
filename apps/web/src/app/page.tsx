@@ -8,6 +8,7 @@ import { FleetUSP } from "./_components/landing/FleetUSP";
 import { RouterUSP } from "./_components/landing/RouterUSP";
 import { HowItWorks } from "./_components/landing/HowItWorks";
 import { ClosingCTA } from "./_components/landing/ClosingCTA";
+import { CallSivraFab } from "./_components/landing/CallSivraFab";
 
 export const metadata: Metadata = {
   title: "sivra — tail-spend procurement, handled",
@@ -29,6 +30,7 @@ export default async function LandingPage() {
       <RouterUSP />
       <HowItWorks />
       <ClosingCTA signedIn={signedIn} />
+      <CallSivraFab />
     </main>
   );
 }

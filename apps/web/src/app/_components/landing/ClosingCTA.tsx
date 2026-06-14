@@ -39,34 +39,44 @@ export function ClosingCTA({ signedIn }: { signedIn: boolean }) {
                 </a>
               </div>
 
-              <div className="mt-10 flex flex-col gap-2 border-t border-paper/15 pt-7 sm:flex-row sm:items-center sm:gap-4">
-                <span className="text-sm text-paper/55">
-                  Or just call to place an order &mdash; talk to the voice agent:
-                </span>
-                <a
-                  href="tel:+14472154920"
-                  className="group inline-flex w-fit items-center gap-2.5 text-lg font-semibold text-paper transition hover:text-paper"
-                >
-                  <span
-                    aria-hidden
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/10 ring-1 ring-paper/20 transition group-hover:bg-accent/40"
+              <div className="mt-10 flex flex-col gap-5 border-t border-paper/15 pt-7 sm:flex-row sm:items-center sm:gap-6">
+                {/* Sivra — given a proper home at a comfortable size. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/sivra-person.png"
+                  alt="Sivra, your procurement employee"
+                  className="size-20 shrink-0 rounded-full object-cover shadow-lg ring-2 ring-accent/60 ring-offset-2 ring-offset-ink sm:size-24"
+                  style={{ objectPosition: "50% 22%" }}
+                />
+                <div className="flex flex-col gap-2 sm:gap-2.5">
+                  <span className="text-sm text-paper/55">
+                    Or just call to place an order &mdash; talk to the voice agent:
+                  </span>
+                  <a
+                    href="tel:+14472154920"
+                    className="group inline-flex w-fit items-center gap-2.5 text-lg font-semibold text-paper transition hover:text-paper"
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <span
+                      aria-hidden
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/10 ring-1 ring-paper/20 transition group-hover:bg-accent/40"
                     >
-                      <path d="M6.5 3.5h3l1.2 3.6-1.8 1.3a12 12 0 0 0 5.4 5.4l1.3-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 5 5.1 1.5 1.5 0 0 1 6.5 3.5Z" />
-                    </svg>
-                  </span>
-                  <span className="font-display tracking-tight underline-offset-4 group-hover:underline">
-                    +1 447 215 4920
-                  </span>
-                </a>
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M6.5 3.5h3l1.2 3.6-1.8 1.3a12 12 0 0 0 5.4 5.4l1.3-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 5 5.1 1.5 1.5 0 0 1 6.5 3.5Z" />
+                      </svg>
+                    </span>
+                    <span className="font-display tracking-tight underline-offset-4 group-hover:underline">
+                      +1 447 215 4920
+                    </span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

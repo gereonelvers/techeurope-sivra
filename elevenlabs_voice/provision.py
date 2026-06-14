@@ -42,7 +42,7 @@ RESOLVE_URL = f"{SUPERVISOR_BASE}/resolve/{{{{rid}}}}"
 # Voice: "Charlotte" is a natural, warm multilingual voice. Override with EL_VOICE_ID.
 VOICE_ID = os.environ.get("EL_VOICE_ID", "XB0fDUnXU5powFXDhCwa")  # Charlotte
 LLM = os.environ.get("EL_LLM", "gemini-2.5-flash")
-AGENT_NAME = os.environ.get("EL_AGENT_NAME", "sivra Quartermaster Voice")
+AGENT_NAME = os.environ.get("EL_AGENT_NAME", "sivra Voice")
 
 # Telnyx (outbound SIP trunk -> PSTN)
 TELNYX_API = "https://api.telnyx.com/v2"
@@ -304,7 +304,7 @@ def setup_telephony(agent_id: str) -> None:
         # 2) import the outbound SIP-trunk phone number into ElevenLabs.
         body = {
             "phone_number": TELNYX_FROM,
-            "label": "sivra Quartermaster outbound (Telnyx)",
+            "label": "sivra outbound (Telnyx)",
             "provider": "sip_trunk",
             "outbound_trunk_config": {
                 "address": EL_TELNYX_OUTBOUND_HOST,  # ElevenLabs sends INVITE here (Telnyx)

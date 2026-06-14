@@ -43,7 +43,7 @@ Read from env (`.env` locally via python-dotenv; Railway service vars in prod):
 - `VOICE_URL` (default `https://voice-production-2b12.up.railway.app`)
 - `TELNYX_API_KEY`, `TELNYX_ALPHA_SENDER` (sender, falls back to `TELNYX_FROM`),
   `TELNYX_MESSAGING_PROFILE_ID`
-- `QM_DEMO_PHONE` — default recipient for the SMS/voice tools
+- `SIVRA_DEMO_PHONE` — default recipient for the SMS/voice tools
 
 ## Live deployment (project "believable-comfort")
 

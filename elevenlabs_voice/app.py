@@ -1,4 +1,4 @@
-"""sivra Quartermaster Voice Tier — ElevenLabs Conversational AI edition.
+"""sivra Voice Tier — ElevenLabs Conversational AI edition.
 
 Replaces the flaky Gemini-Live/Telnyx hand-bridge. When an escalation is
 urgent+complex (urgency_tier == "voice"), the supervisor hits POST /call here.
@@ -39,7 +39,7 @@ EL_AGENT_ID = os.environ.get("EL_AGENT_ID", "").strip()
 EL_PHONE_NUMBER_ID = os.environ.get("EL_PHONE_NUMBER_ID", "").strip()
 SUPERVISOR_BASE = os.environ.get("PUBLIC_BASE_URL", "https://sivra.io").rstrip("/")
 
-app = FastAPI(title="sivra Quartermaster Voice (ElevenLabs)", version="1.0.0")
+app = FastAPI(title="sivra Voice (ElevenLabs)", version="1.0.0")
 
 
 def _el_headers() -> dict:
@@ -58,7 +58,7 @@ class CallRequest(BaseModel):
 async def health() -> dict:
     return {
         "ok": True,
-        "service": "quartermaster-voice-elevenlabs",
+        "service": "sivra-voice-elevenlabs",
         "engine": "elevenlabs-convai",
         "supervisor": SUPERVISOR_BASE,
         "elevenlabs_configured": bool(EL_KEY),

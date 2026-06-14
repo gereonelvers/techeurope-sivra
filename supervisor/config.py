@@ -37,8 +37,8 @@ def label(org_id: str, person: TargetPerson) -> str:
 
 
 def phone(org_id: str, person: TargetPerson) -> Optional[str]:
-    # env override keeps personal numbers out of git: QM_PHONE_<ROLE> or QM_DEMO_PHONE
-    env = os.getenv(f"QM_PHONE_{person.value.upper()}") or os.getenv("QM_DEMO_PHONE")
+    # env override keeps personal numbers out of git: SIVRA_PHONE_<ROLE> or SIVRA_DEMO_PHONE
+    env = os.getenv(f"SIVRA_PHONE_{person.value.upper()}") or os.getenv("SIVRA_DEMO_PHONE")
     if env:
         return env
     p = people(org_id).get(person.value)

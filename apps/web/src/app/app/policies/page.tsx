@@ -9,6 +9,7 @@ import {
   type PolicyRule,
 } from "@/lib/policy";
 import { PolicyEditor } from "./PolicyEditor";
+import { RoutingMap } from "./RoutingMap";
 
 // Policy editor page: the org's customizable escalation flow. Loads the current
 // PermissionPolicy (org-scoped), self-heals a missing one, and hands it to the
@@ -45,6 +46,17 @@ export default async function PoliciesPage() {
           {!canManage ? " You have view-only access." : ""}
         </p>
       </header>
+
+      {/* Live decision-routing map (team + paths + recent escalations). */}
+      <RoutingMap />
+
+      <div className="mt-10 border-t border-ink/10 pt-8">
+        <h2 className="text-lg font-semibold">Budget bands</h2>
+        <p className="mt-0.5 max-w-prose text-sm text-ink/55">
+          The ordered rules the routing map above is built from — edit who signs
+          off at each threshold.
+        </p>
+      </div>
 
       <PolicyEditor
         initialRules={rules}

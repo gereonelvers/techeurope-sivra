@@ -38,7 +38,7 @@ TELNYX_API_KEY = os.environ.get("TELNYX_API_KEY", "")
 TELNYX_ALPHA_SENDER = os.environ.get("TELNYX_ALPHA_SENDER", "")
 TELNYX_FROM = os.environ.get("TELNYX_FROM", "")
 TELNYX_MESSAGING_PROFILE_ID = os.environ.get("TELNYX_MESSAGING_PROFILE_ID", "")
-QM_DEMO_PHONE = os.environ.get("QM_DEMO_PHONE", "")
+SIVRA_DEMO_PHONE = os.environ.get("SIVRA_DEMO_PHONE", "")
 
 TELNYX_API = "https://api.telnyx.com/v2"
 
@@ -59,19 +59,19 @@ class EscalateBody(BaseModel):
 
 
 class CallBody(BaseModel):
-    to: Optional[str] = None          # defaults to QM_DEMO_PHONE server-side
+    to: Optional[str] = None          # defaults to SIVRA_DEMO_PHONE server-side
     context: Optional[str] = None     # optional override for Gemini's brief
     person: str = "the procurement lead"
 
 
 class RawSmsBody(BaseModel):
-    to: Optional[str] = None          # defaults to QM_DEMO_PHONE
+    to: Optional[str] = None          # defaults to SIVRA_DEMO_PHONE
     text: str
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 def _demo_phone(supplied: Optional[str]) -> str:
-    return (supplied or QM_DEMO_PHONE or "").strip()
+    return (supplied or SIVRA_DEMO_PHONE or "").strip()
 
 
 def _decision_request(b: EscalateBody) -> dict[str, Any]:
@@ -106,7 +106,7 @@ def index() -> HTMLResponse:
         render_page(
             supervisor_url=SUPERVISOR_URL,
             voice_url=VOICE_URL,
-            demo_phone=QM_DEMO_PHONE,
+            demo_phone=SIVRA_DEMO_PHONE,
             alpha_sender=TELNYX_ALPHA_SENDER or TELNYX_FROM,
         )
     )
@@ -120,7 +120,7 @@ def health() -> dict:
         "supervisor": SUPERVISOR_URL,
         "voice": VOICE_URL,
         "telnyx_configured": bool(TELNYX_API_KEY and (TELNYX_ALPHA_SENDER or TELNYX_FROM)),
-        "demo_phone_set": bool(QM_DEMO_PHONE),
+        "demo_phone_set": bool(SIVRA_DEMO_PHONE),
     }
 
 
@@ -157,7 +157,7 @@ def api_call(body: CallBody) -> JSONResponse:
     to = _demo_phone(body.to)
     if not to.startswith("+"):
         return JSONResponse(
-            {"ok": False, "error": "`to` must be E.164 (start with +). Set QM_DEMO_PHONE or pass a number."},
+            {"ok": False, "error": "`to` must be E.164 (start with +). Set SIVRA_DEMO_PHONE or pass a number."},
             status_code=422,
         )
 
