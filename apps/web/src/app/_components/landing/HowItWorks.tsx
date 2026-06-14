@@ -84,16 +84,6 @@ export function HowItWorks() {
             </div>
           ))}
         </div>
-
-        {/* the seam callout */}
-        <div className="mt-10 rounded-2xl border border-accent/20 bg-accent/[0.04] p-7 lg:p-8">
-          <p className="max-w-3xl text-sm leading-relaxed text-ink/70">
-            Research and the decision are deliberately separate stages, joined
-            by one JSON seam &mdash; the <strong>ResearchReport</strong>. The
-            fleet&apos;s job ends when it posts the report; the app&apos;s job
-            is to act on it. Clean contract, fully replayable.
-          </p>
-        </div>
       </div>
     </section>
   );
